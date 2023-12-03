@@ -1,4 +1,4 @@
-let filename = "/Users/jls83/other_projects/advent_2023/day_01/example2.txt";;
+let filename = "/Users/jls83/other_projects/advent_2023/day_01/input.txt";;
 
 let lines = In_channel.with_open_text filename In_channel.input_all
   |> String.split_on_char '\n'
@@ -9,31 +9,7 @@ let to_digit c = Char.code c - 48;;
 type trie = Trie of int option * char_to_children
     and char_to_children = (char * trie) list;;
 
-let example =
-  Trie (None,
-	[('i', Trie (Some 11,
-                     [('n', Trie (Some 5, [('n', Trie (Some 9, []))]))]));
-	 ('t',
-	  Trie (None,
-		[('e',
-		  Trie (None,
-			[('n', Trie (Some 12, [])); ('d', Trie (Some 4, []));
-			 ('a', Trie (Some 3, []))]));
-		 ('o', Trie (Some 7, []))]));
-     ('A', Trie (Some 15, []))]);;
-
-(*
-    "one":      1,
-    "two":      2,
-    "three":    3,
-    "four":     4,
-    "five":     5,
-    "six":      6,
-    "seven":    7,
-    "eight":    8,
-    "nine":     9,
-
-    *)
+(* This is bonkers. *)
 
 let number_trie = Trie (None, 
 [
@@ -47,43 +23,43 @@ let number_trie = Trie (None,
  ('8', Trie (Some 8, []));
  ('9', Trie (Some 9, []));
 
- ('e', Trie (None,
-  [('i', Trie (None,
-    [('g', Trie (None,
-      [('h', Trie (None,
+ ('e', Trie (Some 0,
+  [('i', Trie (Some 0,
+    [('g', Trie (Some 0,
+      [('h', Trie (Some 0,
         [('t', Trie (Some 8, []))]))]))]))]));
 
- ('f', Trie (None, 
-  [('i', Trie (None, 
-    [('v', Trie (None, 
+ ('f', Trie (Some 0, 
+  [('i', Trie (Some 0, 
+    [('v', Trie (Some 0, 
       [('e', Trie (Some 5, []))]))]));
-   ('o', Trie (None, 
-     [('u', Trie (None,
+   ('o', Trie (Some 0, 
+     [('u', Trie (Some 0,
        [('r', Trie (Some 4, []))]))]))]));
 
- ('n', Trie (None,
-  [('i', Trie (None,
-    [('n', Trie (None,
+ ('n', Trie (Some 0,
+  [('i', Trie (Some 0,
+    [('n', Trie (Some 0,
       [('e', Trie (Some 9, []))]))]))]));
 
- ('o', Trie (None,
-  [('n', Trie (None,
+ ('o', Trie (Some 0,
+  [('n', Trie (Some 0,
     [('e', Trie (Some 1,[]))]))]));
 
- ('s', Trie (None,
-  [('i', Trie (None,
+ ('s', Trie (Some 0,
+  [('i', Trie (Some 0,
     [('x', Trie (Some 6, []))]));
-   ('e', Trie (None,
-     [('v', Trie (None,
-       [('e', Trie (None,
+   ('e', Trie (Some 0,
+     [('v', Trie (Some 0,
+       [('e', Trie (Some 0,
          [('n', Trie (Some 7, []))]))]))]))]));
 
- ('t', Trie (None,
-  [('w', Trie (None,
+ ('t', Trie (Some 0,
+  [('w', Trie (Some 0,
     [('o', Trie (Some 2, []))]));
-   ('h', Trie (None,
-     [('r', Trie (None,
-       [('e', Trie (None,
+   ('h', Trie (Some 0,
+     [('r', Trie (Some 0,
+       [('e', Trie (Some 0,
          [('e', Trie (Some 3, []))]))]))]))]))]);;
 
 
@@ -109,13 +85,18 @@ let rec lookup trie w =
 (* TODO: is this messy? *)
 let bar a = (Array.get a 0 * 10) + Array.get a (Array.length a - 1);;
 
-(* TODO: filter_map? *)
-let foo s = String.to_seq s
-  |> Seq.map to_digit
-  |> Seq.filter (fun n -> n > 0 && n < 10)
-  |> Array.of_seq
+let rec parse_line s pos len res =
+  if (len > (String.length s) - pos) || (pos >= String.length s) then res
+  else
+    match lookup number_trie (String.sub s pos len) with
+    | Some 0 -> parse_line s pos (len + 1) res
+    | Some n -> let next = res @ [n] in parse_line s (pos + 1) 1 next
+    | None ->   parse_line s (pos + 1) 1 res;;
+
+let what s = parse_line s 0 1 []
+  |> Array.of_list
   |> bar;;
 
-let res = List.map foo lines |> List.fold_left (+) 0;;
+let res = List.map what lines |> List.fold_left (+) 0;;
 
 Printf.printf "%d\n" res;;
